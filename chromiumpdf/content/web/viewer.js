@@ -411,7 +411,8 @@ let PDFViewerApplication = {
 
       var ham = new Hammer( el, {
         domEvents: true,
-        touchAction: 'pan-x pan-y'
+        touchAction: 'pan-x pan-y',
+	cssProps: { userSelect: 'auto', },
       } );
 
       ham.get('pinch').set({ enable: true });
