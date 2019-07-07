@@ -406,60 +406,54 @@ let PDFViewerApplication = {
       }
       return this._initializeViewerComponents();
     }).then(() => {
-      var el = this.pdfViewer.viewer;
-      var me = this;
+      var pdfApp = this;
+      var viewerElement = pdfApp.pdfViewer.viewer;
 
-      var ham = new Hammer( el, {
+      var ham = new Hammer( viewerElement, {
         domEvents: true,
         touchAction: 'pan-x pan-y',
-	cssProps: { userSelect: 'auto', },
+        cssProps: { userSelect: 'auto', },
       } );
 
       ham.get('pinch').set({ enable: true });
 
       ham.on( "pinch", function( e ) {
-        if (Math.abs(e.scale - 1.0) > .025) {
-          let previousScale = me.pdfViewer.currentScale;
-
-          if (e.scale < 1.0) {
-            me.zoomOut(-(1-e.scale) / 100000);
-          } else {
-            me.zoomIn((e.scale - 1.0)/100000);
-          }
-
-          let currentScale = me.pdfViewer.currentScale;
-          if (previousScale !== currentScale) {
-            let scaleCorrectionFactor = currentScale / previousScale - 1;
-            let rect = me.pdfViewer.container.getBoundingClientRect();
-            let dx = e.srcEvent.clientX - rect.left;
-            let dy = e.srcEvent.clientY - rect.top;
-            me.pdfViewer.container.scrollLeft += dx * scaleCorrectionFactor;
-            me.pdfViewer.container.scrollTop += dy * scaleCorrectionFactor;
-          }
+        if (Math.abs(e.scale - 1.0) < .05) {
+          return;
+        }
+        console.log('pinch: ' + e.scale);
+        let previousScale = pdfApp.pdfViewer.currentScale;
+        pdfApp.zoomScale(e.scale)
+        let currentScale = pdfApp.pdfViewer.currentScale;
+        if (previousScale !== currentScale) {
+          let scaleCorrectionFactor = currentScale / previousScale - 1;
+          let rect = pdfApp.pdfViewer.container.getBoundingClientRect();
+          let dx = e.srcEvent.clientX - rect.left;
+          let dy = e.srcEvent.clientY - rect.top;
+          pdfApp.pdfViewer.container.scrollLeft += dx * scaleCorrectionFactor;
+          pdfApp.pdfViewer.container.scrollTop += dy * scaleCorrectionFactor;
         }
       } );
       
-	    /*
       ham.on( "pinchend", function( e ) {
-        let previousScale = me.pdfViewer.currentScale;
-
-        if (e.scale < 1.0) {
-          me.zoomOut(-(1-e.scale));
-        } else {
-          me.zoomIn(e.scale - 1.0);
+        if (Math.abs(e.scale - 1.0) < .05) {
+          return;
         }
+        console.log('pinchend: ' + e.scale);
+        let previousScale = pdfApp.pdfViewer.currentScale;
 
-        let currentScale = me.pdfViewer.currentScale;
+        pdfApp.zoomScale(e.scale)
+
+        let currentScale = pdfApp.pdfViewer.currentScale;
         if (previousScale !== currentScale) {
           let scaleCorrectionFactor = currentScale / previousScale - 1;
-          let rect = me.pdfViewer.container.getBoundingClientRect();
+          let rect = pdfApp.pdfViewer.container.getBoundingClientRect();
           let dx = e.srcEvent.clientX - rect.left;
           let dy = e.srcEvent.clientY - rect.top;
-          me.pdfViewer.container.scrollLeft += dx * scaleCorrectionFactor;
-          me.pdfViewer.container.scrollTop += dy * scaleCorrectionFactor;
+          pdfApp.pdfViewer.container.scrollLeft += dx * scaleCorrectionFactor;
+          pdfApp.pdfViewer.container.scrollTop += dy * scaleCorrectionFactor;
         }
       } );
-      */
 
       this.bindEvents();
       this.bindWindowEvents();
@@ -680,6 +674,14 @@ let PDFViewerApplication = {
       newScale = Math.floor(newScale * 10) / 10;
       newScale = Math.max(_ui_utils.MIN_SCALE, newScale);
     } while (--ticks > 0 && newScale > _ui_utils.MIN_SCALE);
+    this.pdfViewer.currentScaleValue = newScale;
+  },
+  zoomScale(scale) {
+    let scaleFactor = ((scale - 1.0) / 10) + 1.0;
+    let newScale = this.pdfViewer.currentScale * scaleFactor;
+    newScale = Math.floor(newScale * 100) / 100;
+    newScale = Math.max(_ui_utils.MIN_SCALE, newScale);
+    newScale = Math.min(_ui_utils.MAX_SCALE, newScale);
     this.pdfViewer.currentScaleValue = newScale;
   },
   get pagesCount() {
